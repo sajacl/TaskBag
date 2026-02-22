@@ -89,9 +89,9 @@ public final class TaskBag: @unchecked Sendable {
 /// A bag that runs at most one task per ID. Use `addTask(id:operation:)` to run
 /// keyed async work; duplicate IDs are ignored, and tasks are cancelled on deinit.
 /// Thread-safe: uses an internal lock; safe to use from multiple threads concurrently.
-public final class IdentifiableTaskBag<K>: @unchecked Sendable where K: Hashable, K: Sendable {
+public final class IdentifiableTaskBag<TaskId>: @unchecked Sendable where TaskId: Hashable, TaskId: Sendable {
 
-    private var tasks: [K: Task<Void, Never>] = [:]
+    private var tasks: [TaskId: Task<Void, Never>] = [:]
     private let lock: NSLock = NSLock()
 
     public init() {}
@@ -107,7 +107,7 @@ public final class IdentifiableTaskBag<K>: @unchecked Sendable where K: Hashable
     /// When the operation completes, the task is removed from the bag.
     /// - Parameter priority: Optional task priority; defaults to `nil` (inherited).
     public func addTask(
-        id: K,
+        id: TaskId,
         priority: TaskPriority? = nil,
         operation: sending @escaping @isolated(any) () async -> Void
     ) {
@@ -128,7 +128,7 @@ public final class IdentifiableTaskBag<K>: @unchecked Sendable where K: Hashable
     /// If a task for this ID is already running, this call does nothing. When the operation completes, the task is removed from the bag.
     /// - Parameter priority: Optional task priority; defaults to `nil` (inherited).
     public func addDetachedTask(
-        id: K,
+        id: TaskId,
         priority: TaskPriority? = nil,
         operation: sending @escaping @isolated(any) () async -> Void
     ) {
@@ -148,7 +148,7 @@ public final class IdentifiableTaskBag<K>: @unchecked Sendable where K: Hashable
     /// Stores an existing task in the bag under the given ID. If a task for this ID is already
     /// running, this call does nothing. The stored task will be cancelled when the bag is deallocated.
     /// The task is not removed from the bag when it completes (unlike `addTask(id:operation:)`).
-    public func add(_ task: Task<Void, Never>, id: K) {
+    public func add(_ task: Task<Void, Never>, id: TaskId) {
         lock.lock()
         guard tasks[id] == nil else {
             lock.unlock()
@@ -159,7 +159,7 @@ public final class IdentifiableTaskBag<K>: @unchecked Sendable where K: Hashable
     }
 
     /// Cancels the task for the given ID (if any) and removes it from the bag.
-    public func cancel(id: K) {
+    public func cancel(id: TaskId) {
         lock.lock()
         let task: Task<Void, Never>? = tasks[id]
         tasks[id] = nil
@@ -167,7 +167,7 @@ public final class IdentifiableTaskBag<K>: @unchecked Sendable where K: Hashable
         task?.cancel()
     }
 
-    private func removeCompletedTask(_ id: K) {
+    private func removeCompletedTask(_ id: TaskId) {
         lock.lock()
         tasks[id] = nil
         lock.unlock()
