@@ -53,7 +53,10 @@ public final class TaskBag: @unchecked Sendable {
 
     /// Adds a new task that runs the given operation. The task stays in the bag until `cancel()` or deinit.
     /// - Parameter priority: Optional task priority; defaults to `nil` (inherited).
-    public func addTask(priority: TaskPriority? = nil, operation: sending @escaping @isolated(any) () async -> Void) {
+    public func addTask(
+        priority: TaskPriority? = nil,
+        operation: sending @escaping @isolated(any) () async -> Void
+    ) {
         let task: Task<Void, Never> = Task(priority: priority) { await operation() }
         lock.lock()
         tasks.append(task)
@@ -63,7 +66,10 @@ public final class TaskBag: @unchecked Sendable {
     /// Adds a new detached task that runs the given operation. The task is not bound to the current actor context.
     /// The task stays in the bag until `cancel()` or deinit.
     /// - Parameter priority: Optional task priority; defaults to `nil` (inherited).
-    public func addDetachedTask(priority: TaskPriority? = nil, operation: sending @escaping @isolated(any) () async -> Void) {
+    public func addDetachedTask(
+        priority: TaskPriority? = nil,
+        operation: sending @escaping @isolated(any) () async -> Void
+    ) {
         let task: Task<Void, Never> = Task.detached(priority: priority) { await operation() }
         lock.lock()
         tasks.append(task)
