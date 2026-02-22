@@ -122,7 +122,10 @@ public final class IdentifiableTaskBag<TaskId>: @unchecked Sendable where TaskId
         }
 
         tasks[id] = Task(priority: priority) { [weak self] in
-            await operation()
+            if !Task.isCancelled {
+                await operation()
+            }
+
             self?.removeCompletedTask(id)
         }
     }
@@ -146,7 +149,10 @@ public final class IdentifiableTaskBag<TaskId>: @unchecked Sendable where TaskId
         }
 
         tasks[id] = Task.detached(priority: priority) { [weak self] in
-            await operation()
+            if !Task.isCancelled {
+                await operation()
+            }
+
             self?.removeCompletedTask(id)
         }
     }
