@@ -112,8 +112,12 @@ public final class IdentifiableTaskBag<TaskId>: @unchecked Sendable where TaskId
         operation: sending @escaping @isolated(any) () async -> Void
     ) {
         lock.lock()
-        guard tasks[id] == nil else {
+        defer {
             lock.unlock()
+        }
+
+        guard tasks[id] == nil else {
+            // no-op
             return
         }
 
@@ -121,7 +125,6 @@ public final class IdentifiableTaskBag<TaskId>: @unchecked Sendable where TaskId
             await operation()
             self?.removeCompletedTask(id)
         }
-        lock.unlock()
     }
 
     /// Adds a detached task for the given ID. The task is not bound to the current actor context.
@@ -133,8 +136,12 @@ public final class IdentifiableTaskBag<TaskId>: @unchecked Sendable where TaskId
         operation: sending @escaping @isolated(any) () async -> Void
     ) {
         lock.lock()
-        guard tasks[id] == nil else {
+        defer {
             lock.unlock()
+        }
+
+        guard tasks[id] == nil else {
+            // no-op
             return
         }
 
@@ -142,7 +149,6 @@ public final class IdentifiableTaskBag<TaskId>: @unchecked Sendable where TaskId
             await operation()
             self?.removeCompletedTask(id)
         }
-        lock.unlock()
     }
 
     /// Stores an existing task in the bag under the given ID. If a task for this ID is already
@@ -150,12 +156,16 @@ public final class IdentifiableTaskBag<TaskId>: @unchecked Sendable where TaskId
     /// The task is not removed from the bag when it completes (unlike `addTask(id:operation:)`).
     public func add(_ task: Task<Void, Never>, id: TaskId) {
         lock.lock()
-        guard tasks[id] == nil else {
+        defer {
             lock.unlock()
+        }
+
+        guard tasks[id] == nil else {
+            // no-op
             return
         }
+
         tasks[id] = task
-        lock.unlock()
     }
 
     /// Cancels the task for the given ID (if any) and removes it from the bag.
